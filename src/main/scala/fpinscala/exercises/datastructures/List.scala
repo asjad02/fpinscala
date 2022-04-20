@@ -71,21 +71,20 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Cons(x, xs) if f(x) => dropWhile(xs, f)
       case Cons(_, _ ) => l
 
-  @annotation.tailrec
   def init[A](l: List[A]): List[A] = 
-    l match
-      case Nil => sys.error("List is empty")
-      case Cons(_, Nil) => Nil
-      case Cons(x, xs) => Cons(x, init(xs))
+    // l match
+    //   case Nil => sys.error("List is empty")
+    //   case Cons(_, Nil) => Nil
+    //   case Cons(x, xs) => Cons(x, init(xs))
 
-    // @annotation.tailrec
-    // def go(initList: List[A], inputList: List[A]): List[A] = 
-    //   inputList match
-    //     case Nil => sys.error("List is empty")
-    //     case Cons(_, Nil) => initList
-    //     case Cons(x, xs) => go(Cons(x, initList), xs)
+    @annotation.tailrec
+    def go(initList: List[A], inputList: List[A]): List[A] = 
+      inputList match
+        case Nil => sys.error("List is empty")
+        case Cons(_, Nil) => initList
+        case Cons(x, xs) => go(Cons(x, initList), xs)
 
-    // go(Nil, l)
+    go(Nil, l)
 
   def length[A](l: List[A]): Int = 
     foldLeft(l, 0, (acc, _) => acc + 1 )
