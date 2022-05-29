@@ -7,15 +7,28 @@ enum Option[+A]:
   case Some(get: A)
   case None
 
-  def map[B](f: A => B): Option[B] = ???
+  def map[B](f: A => B): Option[B] = 
+    this match
+      case Some(x) => Some(f(x))
+      case None => None
 
-  def getOrElse[B>:A](default: => B): B = ???
+  def getOrElse[B>:A](default: => B): B = 
+    this match 
+      case Some(x) => x
+      case None => default
 
-  def flatMap[B](f: A => Option[B]): Option[B] = ???
+  def flatMap[B](f: A => Option[B]): Option[B] = 
+    map(x => f(x)).getOrElse(None)
 
-  def orElse[B>:A](ob: => Option[B]): Option[B] = ???
+  def orElse[B>:A](ob: => Option[B]): Option[B] = 
+    map(x => Some(x)).getOrElse(ob)
+    // Some(this).getOrElse(ob)
 
-  def filter(f: A => Boolean): Option[A] = ???
+  def filter(f: A => Boolean): Option[A] = 
+    flatMap{ x => 
+      if f(x) then Some(x)
+      else None
+    }
 
 object Option:
 
@@ -36,10 +49,62 @@ object Option:
     if xs.isEmpty then None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = ???
+    // If the mean of a sequence is m, the variance is the mean of math.pow(x - m, 2) 
+    // for each element x in the sequence.
+    // ---->>
+    // calculate m -> new list of pow(x-m, 2) -> mean on new list 
+  def variance(xs: Seq[Double]): Option[Double] = 
+    val meanCalculated: Option[Double] = mean(xs)
+    meanCalculated.flatMap { m =>
+      mean(xs.map { x =>
+        math.pow(x - m, 2)
+      })
+    }
 
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = 
+    for 
+      x <- a
+      y <- b 
+    yield f(x, y)
 
-  def sequence[A](as: List[Option[A]]): Option[List[A]] = ???
+    // a.flatMap { x=>
+    //   b.map { y =>
+    //     f(x,y)
+    //   }
+    // }
 
-  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = ???
+    // (a, b) match
+    //   case (Some(x), Some(y)) => Some(f(x, y))
+    //   case (_, _) => None
+
+
+    // turn option to outer edge also 
+    // if any elem None it should be None not Option 
+  def sequence[A](as: List[Option[A]]): Option[List[A]] = 
+    as.foldRight(Some(Nil): Option[List[A]]) ((elem, acc) => map2(elem, acc)( _ :: _))
+
+      // List(None, op2, None, op3)
+      // the current impl doesnt need extra bit orElse(None) =>
+      //  it will never consume None will short-circuit if found
+
+    // as.foldRight(None: Option[List[A]]) {(optA, accOptList) =>
+    //     optA.flatMap { x =>
+    //       accOptList.map { y =>  x :: y }  
+    //     }.orElse(None)
+    // }
+
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = 
+    as.foldRight(Some(Nil): Option[List[B]]) { (elem, accOptList) =>
+      for
+        acc <- accOptList 
+        e <- f(elem)
+      yield (e :: acc)
+      // map2(f(elem), accOptList)(_::_)
+    }
+
+  def sequenceUsingTraverse[A](as: List[Option[A]]): Option[List[A]] = 
+    // A = Option[A] 
+    // but A => Option[B]       ||    Option[     A] 
+    // returns  Option[List[B]] ||    Option[List[A]]
+    traverse(as)(a => (a))
+

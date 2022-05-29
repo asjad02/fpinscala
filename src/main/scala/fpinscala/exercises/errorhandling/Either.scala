@@ -8,13 +8,24 @@ enum Either[+E,+A]:
   case Left(get: E)
   case Right(get: A)
 
-  def map[B](f: A => B): Either[E, B] = ???
+  def map[B](f: A => B): Either[E, B] = 
+    this match
+      case Left(e) => Left(e)
+      case Right(a) => Right(f(a))
 
-  def flatMap[EE >: E, B](f: A => Either[EE, B]): Either[EE, B] = ???
+  def flatMap[EE >: E, B](f: A => Either[EE, B]): Either[EE, B] = this match
+      case Left(e) => Left(e)
+      case Right(a) => f(a)
 
-  def orElse[EE >: E, B >: A](b: => Either[EE, B]): Either[EE, B] = ???
+  def orElse[EE >: E, B >: A](b: => Either[EE, B]): Either[EE, B] = 
+    this match
+      case Left(e) => b
+      case Right(a) => Right(a)
 
-  def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] = ???
+  def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] = 
+    this.flatMap { a=> 
+      b.map {f(a, _)}  
+    }
 
 object Either:
   def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = ???
@@ -38,5 +49,7 @@ object Either:
   def map2All[E, A, B, C](a: Either[List[E], A], b: Either[List[E], B], f: (A, B) => C): Either[List[E], C] = ???
 
   def traverseAll[E, A, B](es: List[A], f: A => Either[List[E], B]): Either[List[E], List[B]] = ???
+    // es.foldRight()
+
 
   def sequenceAll[E, A](es: List[Either[List[E], A]]): Either[List[E], List[A]] = ???
